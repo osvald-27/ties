@@ -1,0 +1,24 @@
+# Environmental variables
+.env
+.env.*
+
+# local configuration
+*.local
+
+# logs
+logs/
+*.logs
+
+# Build outputs
+target/
+build/
+*.jar
+*.class
+
+# Android
+andriod/local.properties
+android/.gradle
+android/build
+
+# VS Code
+.vscode/
