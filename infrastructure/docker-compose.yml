@@ -1,0 +1,167 @@
+version: '3.8'
+
+#====================================================================
+# ties - Aerial Mapping System for Pollution Detection and management
+# Infrastructure Docker Compose
+#====================================================================
+
+networks:
+  ties_network:
+    driver: bridge
+    name: ties_network
+
+volumes:
+  postgres-data:
+    name: ties-postgres-data
+  redis data:
+    name: ties-redis-data
+  mongodb-data:
+    name: ties-mongo-data
+  kafka-data:
+    name: ties-kafka-data
+  zookeeper-data:
+    name: ties-zookeeper-data
+
+services:
+
+#=======================================================
+# ZOOKEEPER - Required by Kafka for cluster coordination
+#=======================================================
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    container_name: ties-zookeeper
+    restart: unless-stopped
+    networks:
+      - ties_network
+    ports:
+      - "2181:2181"
+    volumees:
+      - zookeeper-data:/var/lib/zookeeper/data
+      environment:
+        ZOOKEEPER_CLIENT_PORT: 2181
+        ZOOKEEPER_TICK_TIME: 2000
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+#=========================================
+# KAFKA - Central event streaming backbone
+#=========================================
+kafka:
+  image: confluentinc/cp-kafka:7.5.0
+  container_name: ties-kafka
+  restart: unless-stopped
+  networks:
+    - ties_network
+  ports:
+    - "9092:9092"
+    - "29092:29092"
+  volumes:
+    - kafka-data:/var/lib/kafka/data
+  environment:
+    KAFKA_BROKER_ID: 1
+    KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+    KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+    KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+    KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    KAFKA_LOG_RETENTION_HOURS: 168
+  depends_on:
+    zookeeper:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+    interval: 15s
+    timeout: 10s
+    retries: 5
+
+#==================================================
+KAFKA UI - Visual interface to monitor Kafka topics
+#==================================================
+
+kafka-ui:
+  images: provectuslabs/kafka-ui:latest
+  container_name: ties-kakfa-ui
+  restart: unless-stopped
+  networks:
+    - ties-network
+  ports:
+    - "8090:8080"
+  environment:
+    KAFKA_CLUSTERS_0_NAME: ties-cluster
+    KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+   depends_on:
+      kafka:
+        condition: service_healthy
+
+  # ============================================================
+  # POSTGRESQL - Relational metadata storage
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: ties-postgres
+    restart: unless-stopped
+    networks:
+      - ties-network
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mapping_db}
+      POSTGRES_USER: ${POSTGRES_USER:-mapping_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mapping_pass}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mapping_user} -d ${POSTGRES_DB:-mapping_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # REDIS - Caching layer for intermediate data
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ties-redis
+    restart: unless-stopped
+    networks:
+      - ties-network
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_pass}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD:-redis_pass}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ============================================================
+  # MONGODB - Image object storage
+  # ============================================================
+  mongodb:
+    image: mongo:7
+    container_name: ties-mongodb
+    restart: unless-stopped
+    networks:
+      - ties-network
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USER:-mongo_user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-mongo_pass}
+      MONGO_INITDB_DATABASE: ${MONGO_DB:-mapping_images}
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
