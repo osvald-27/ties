@@ -1,0 +1,171 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+        Project Identity
+        groupId = your organisation namespace (like a package name)
+        artifactId = the name of this specific service
+        version = current version of this service
+    -->
+    <groupId>com.ties</groupId>
+    <artifactId>ingestion-service</artifactId>
+    <version>1.0.0</version>
+    <packaging>jar</packaging>
+
+    <name>TIES Ingestion Service</name>
+    <description>
+        Receives capture blocks from mobile acquisition devices
+        through Apache Kafka and validates payload integrity
+        before forwarding to downstream processing services.
+    </description>
+
+    <!--
+        Parent — Spring Boot
+        Instead of configuring everything manually we inherit
+        from Spring Boot's parent pom which handles most
+        configuration automatically for us
+    -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.0</version>
+        <relativePath/>
+    </parent>
+
+    <!--
+        Properties
+        Define global variables used throughout this file
+    -->
+    <properties>
+        <java.version>21</java.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <!--
+        Dependencies
+        These are the external libraries our service needs.
+        Maven downloads them automatically from the internet.
+    -->
+    <dependencies>
+
+        <!--
+            Spring Boot Web
+            Gives us a web server and REST API capabilities
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!--
+            Spring Kafka
+            Allows our service to consume messages from Kafka topics
+        -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+
+        <!--
+            Spring Data JPA
+            Allows our service to interact with PostgreSQL database
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!--
+            PostgreSQL Driver
+            The actual connector between Java and PostgreSQL
+        -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!--
+            Jackson
+            Converts Java objects to JSON and back automatically
+        -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!--
+            Lombok
+            Reduces boilerplate code — automatically generates
+            getters, setters, constructors so we don't have to
+            write them manually
+        -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <!--
+            Spring Boot Actuator
+            Gives us health check endpoints automatically
+            so Docker and monitoring systems can check if
+            the service is alive
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!--
+            Spring Boot Test
+            Testing framework for writing unit and integration tests
+        -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <!--
+            Spring Kafka Test
+            Allows us to test Kafka consumers without
+            a real Kafka server running
+        -->
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!--
+        Build Configuration
+        Tells Maven how to package our application
+        into a runnable JAR file
+    -->
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
