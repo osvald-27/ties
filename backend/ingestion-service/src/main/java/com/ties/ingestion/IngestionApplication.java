@@ -2,7 +2,6 @@ package com.ties.ingestion;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.kafka.annotation.EnableKafka;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +19,6 @@ import org.slf4j.LoggerFactory;
  * is a Google Pixel 5 smartphone acting as the drone replacement.
  */
 @SpringBootApplication
-@EnableKafka
 public class IngestionApplication {
 
     private static final Logger logger = 
