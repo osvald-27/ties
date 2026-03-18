@@ -1,0 +1,11 @@
+In my first sprint I accomplished the following tasks:
+
+* Downloaded Docker
+* Downloaded the Linux engine for windows (wsl)
+* Downloaded Java 25
+* Downloaded Git
+* Vs Code
+* repo create and built myself
+*Split tech stack into services and kafka installations
+*ran these services on different ports using scripts
+*shipped with docker 
